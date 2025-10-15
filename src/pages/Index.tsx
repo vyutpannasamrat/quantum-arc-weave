@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import TrustLedger from "@/components/TrustLedger";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 import CTA from "@/components/CTA";
@@ -7,6 +8,7 @@ const Index = () => {
   return (
     <main className="min-h-screen">
       <Hero />
+      <TrustLedger />
       <Features />
       <HowItWorks />
       <CTA />
