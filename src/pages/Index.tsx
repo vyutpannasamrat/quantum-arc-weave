@@ -1,3 +1,4 @@
+import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import TrustLedger from "@/components/TrustLedger";
 import ARMapping from "@/components/ARMapping";
@@ -11,7 +12,9 @@ import CTA from "@/components/CTA";
 const Index = () => {
   return (
     <main className="min-h-screen">
-      <Hero />
+      <Navigation />
+      <div className="pt-20">
+        <Hero />
       <TrustLedger />
       <ARMapping />
       <CollectiveSentiment />
@@ -20,6 +23,7 @@ const Index = () => {
       <Features />
       <HowItWorks />
       <CTA />
+      </div>
       
       {/* Footer */}
       <footer className="border-t border-border/50 py-12 px-6">

@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, Coins, User, LogOut } from "lucide-react";
+import { Loader2, Coins, Shield, User as UserIcon, LogOut, ArrowLeft } from "lucide-react";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
+});
 
 interface Profile {
-  id: string;
   full_name: string | null;
   trust_score: number;
   impact_tokens: number;
@@ -20,86 +23,92 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState("");
 
   useEffect(() => {
-    getProfile();
+    const loadProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/auth");
+          return;
+        }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
+        setEmail(session.user.email || "");
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (error) throw error;
+
+        setProfile(data);
+        setFullName(data.full_name || "");
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load profile",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    loadProfile();
+  }, [navigate, toast]);
 
-  const getProfile = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdating(true);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const validated = profileSchema.parse({ fullName });
       
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setProfile(data);
-      setFullName(data.full_name || "");
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async () => {
-    if (!profile) return;
-
-    setSaving(true);
-    try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
-        .eq("id", profile.id);
+        .update({ full_name: validated.fullName })
+        .eq("id", session.user.id);
 
       if (error) throw error;
 
+      setProfile((prev) => prev ? { ...prev, full_name: validated.fullName } : null);
+      
       toast({
         title: "Success",
-        description: "Profile updated successfully.",
+        description: "Profile updated successfully",
       });
-      
-      setProfile({ ...profile, full_name: fullName });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update profile",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setSaving(false);
+      setUpdating(false);
     }
   };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   if (loading) {
@@ -110,111 +119,118 @@ const Profile = () => {
     );
   }
 
-  if (!profile) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen py-24 px-6 bg-gradient-to-b from-background via-background/95 to-background">
-      <div className="container mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">
-              Your <span className="text-gradient-quantum">Profile</span>
-            </h1>
-            <p className="text-muted-foreground">Manage your identity and impact metrics</p>
-          </div>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Back to Home
-          </Button>
-        </div>
+    <div className="min-h-screen py-12 px-4 bg-gradient-to-b from-background to-background/95">
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: "1s" }} />
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Trust Score</p>
-                  <p className="text-3xl font-bold">{profile.trust_score}</p>
-                  <Badge variant="outline" className="mt-1">
-                    {profile.trust_score >= 75 ? "Excellent" : profile.trust_score >= 50 ? "Good" : "Growing"}
-                  </Badge>
-                </div>
+      <div className="container mx-auto max-w-4xl relative z-10">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="mb-6"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="border-primary/20 bg-card/95 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Trust Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-gradient-quantum">
+                {profile?.trust_score || 0}
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Out of 100 • Verified by community
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="border-accent/20 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <Coins className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Impact Tokens</p>
-                  <p className="text-3xl font-bold">{profile.impact_tokens}</p>
-                  <Badge variant="secondary" className="mt-1">
-                    Active contributor
-                  </Badge>
-                </div>
+          <Card className="border-primary/20 bg-card/95 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-primary" />
+                Impact Tokens
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-gradient-quantum">
+                {profile?.impact_tokens || 0}
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Earned through positive actions
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Profile Details */}
-        <Card className="border-border/50">
+        <Card className="mt-6 border-primary/20 bg-card/95 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Personal Information
+              <UserIcon className="h-5 w-5" />
+              Profile Information
             </CardTitle>
-            <CardDescription>Update your profile details</CardDescription>
+            <CardDescription>
+              Manage your personal information and preferences
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
-              />
-            </div>
+          <CardContent>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email cannot be changed
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.id}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button onClick={updateProfile} disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-              <Button variant="outline" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </div>
+              <div className="flex gap-3">
+                <Button type="submit" disabled={updating}>
+                  {updating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Profile"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>
