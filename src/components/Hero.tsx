@@ -1,10 +1,48 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/quantum-hero.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Auth Navigation */}
+      <div className="absolute top-6 right-6 z-20">
+        {user ? (
+          <Button
+            variant="outline"
+            onClick={() => navigate("/profile")}
+            className="gap-2"
+          >
+            <User className="h-4 w-4" />
+            Profile
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => navigate("/auth")}
+          >
+            Sign In
+          </Button>
+        )}
+      </div>
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -39,14 +77,19 @@ const Hero = () => {
               variant="quantum" 
               size="lg"
               className="text-lg px-8 py-6 h-auto"
+              onClick={() => navigate(user ? "/profile" : "/auth")}
             >
-              Join the Network
+              {user ? "View Profile" : "Join the Network"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
               variant="mesh" 
               size="lg"
               className="text-lg px-8 py-6 h-auto"
+              onClick={() => {
+                const featuresSection = document.getElementById("features");
+                featuresSection?.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               Explore Technology
             </Button>
