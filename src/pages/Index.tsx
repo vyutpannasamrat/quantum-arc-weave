@@ -2,6 +2,7 @@ import Hero from "@/components/Hero";
 import TrustLedger from "@/components/TrustLedger";
 import ARMapping from "@/components/ARMapping";
 import CollectiveSentiment from "@/components/CollectiveSentiment";
+import MicroActions from "@/components/MicroActions";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 import CTA from "@/components/CTA";
@@ -13,6 +14,7 @@ const Index = () => {
       <TrustLedger />
       <ARMapping />
       <CollectiveSentiment />
+      <MicroActions />
       <Features />
       <HowItWorks />
       <CTA />
