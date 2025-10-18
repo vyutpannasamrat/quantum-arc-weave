@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, LogIn } from "lucide-react";
+import { User, LogIn, Plus } from "lucide-react";
 
 const Navigation = () => {
   const [user, setUser] = useState<any>(null);
@@ -29,12 +29,20 @@ const Navigation = () => {
 
           <div className="flex items-center gap-4">
             {user ? (
-              <Button asChild variant="outline">
-                <Link to="/profile">
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </Link>
-              </Button>
+              <>
+                <Button asChild variant="quantum">
+                  <Link to="/submit-action">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Submit Action
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Link>
+                </Button>
+              </>
             ) : (
               <Button asChild>
                 <Link to="/auth">
