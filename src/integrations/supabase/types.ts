@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       actions: {
         Row: {
+          ai_feedback: string | null
           created_at: string
           description: string
           id: string
@@ -23,12 +24,16 @@ export type Database = {
           location_lat: number | null
           location_lng: number | null
           location_name: string | null
+          quality_score: number | null
+          relevance_score: number | null
+          sentiment_score: number | null
           status: string
-          tokens_earned: number
+          tokens_earned: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          ai_feedback?: string | null
           created_at?: string
           description: string
           id?: string
@@ -36,12 +41,16 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
+          quality_score?: number | null
+          relevance_score?: number | null
+          sentiment_score?: number | null
           status?: string
-          tokens_earned?: number
+          tokens_earned?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          ai_feedback?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -49,8 +58,11 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
+          quality_score?: number | null
+          relevance_score?: number | null
+          sentiment_score?: number | null
           status?: string
-          tokens_earned?: number
+          tokens_earned?: number | null
           updated_at?: string
           user_id?: string
         }

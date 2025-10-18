@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Coins, Shield, User as UserIcon, LogOut, ArrowLeft } from "lucide-react";
+import { Loader2, Coins, Shield, User as UserIcon, LogOut, ArrowLeft, TrendingUp } from "lucide-react";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -27,6 +27,7 @@ const Profile = () => {
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState("");
+  const [recentActions, setRecentActions] = useState<any[]>([]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -50,6 +51,16 @@ const Profile = () => {
 
         setProfile(data);
         setFullName(data.full_name || "");
+
+        // Fetch recent actions
+        const { data: actionsData } = await supabase
+          .from("actions")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        setRecentActions(actionsData || []);
       } catch (error) {
         toast({
           title: "Error",
@@ -233,6 +244,57 @@ const Profile = () => {
             </form>
           </CardContent>
         </Card>
+
+        {recentActions.length > 0 && (
+          <Card className="mt-6 border-primary/20 bg-card/95 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Recent Actions
+                </CardTitle>
+                <Button variant="link" onClick={() => navigate("/actions")}>
+                  View All →
+                </Button>
+              </div>
+              <CardDescription>
+                Your latest contributions with AI analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {recentActions.map((action) => (
+                <div key={action.id} className="p-4 border rounded-lg space-y-2">
+                  <p className="font-medium">{action.description}</p>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{new Date(action.created_at).toLocaleDateString()}</span>
+                    {action.location_name && (
+                      <>
+                        <span>•</span>
+                        <span>{action.location_name}</span>
+                      </>
+                    )}
+                  </div>
+                  {action.quality_score !== null && (
+                    <div className="grid grid-cols-3 gap-4 pt-2 border-t">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Quality</p>
+                        <p className="font-semibold">{(action.quality_score * 100).toFixed(0)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Sentiment</p>
+                        <p className="font-semibold">{(action.sentiment_score * 100).toFixed(0)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tokens</p>
+                        <p className="font-semibold text-green-600">+{action.tokens_earned}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

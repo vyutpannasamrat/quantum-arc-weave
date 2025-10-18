@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, LogIn, Plus } from "lucide-react";
+import { User, LogIn, Plus, BarChart3 } from "lucide-react";
 
 const Navigation = () => {
   const [user, setUser] = useState<any>(null);
@@ -34,6 +34,12 @@ const Navigation = () => {
                   <Link to="/submit-action">
                     <Plus className="h-4 w-4 mr-2" />
                     Submit Action
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/actions">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Dashboard
                   </Link>
                 </Button>
                 <Button asChild variant="outline">

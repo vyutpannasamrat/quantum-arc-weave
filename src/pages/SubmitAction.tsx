@@ -26,6 +26,8 @@ export default function SubmitAction() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -118,7 +120,7 @@ export default function SubmitAction() {
         imageUrl = publicUrl;
       }
 
-      const { error: insertError } = await supabase
+      const { data: insertedAction, error: insertError } = await supabase
         .from('actions')
         .insert({
           user_id: user.id,
@@ -127,16 +129,64 @@ export default function SubmitAction() {
           location_lat: values.locationLat || null,
           location_lng: values.locationLng || null,
           image_url: imageUrl,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
+      // Call AI analysis
+      setIsAnalyzing(true);
       toast({
         title: "Action submitted!",
-        description: "You've earned 10 impact tokens",
+        description: "AI is analyzing your action...",
       });
 
-      navigate("/profile");
+      try {
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-action', {
+          body: {
+            actionId: insertedAction.id,
+            description: values.description,
+            imageUrl: imageUrl,
+            locationName: values.locationName
+          }
+        });
+
+        if (analysisError) {
+          console.error('Analysis error:', analysisError);
+          toast({
+            title: "Action submitted",
+            description: "Your action was saved but AI analysis failed. Manual review will be performed.",
+            variant: "destructive",
+          });
+        } else {
+          setAnalysisResult(analysisData);
+          
+          // Update trust score
+          await supabase.functions.invoke('update-trust-score', {
+            body: {
+              userId: user.id,
+              qualityScore: analysisData.quality_score,
+              sentimentScore: analysisData.sentiment_score,
+              relevanceScore: analysisData.relevance_score,
+              imageProvided: !!imageUrl,
+              tokensEarned: analysisData.tokens_earned
+            }
+          });
+
+          toast({
+            title: "Action analyzed!",
+            description: `You earned ${analysisData.tokens_earned} tokens! Quality score: ${(analysisData.quality_score * 100).toFixed(0)}%`,
+          });
+        }
+      } catch (error: any) {
+        console.error('AI analysis failed:', error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+
+      // Navigate after a short delay to show results
+      setTimeout(() => navigate("/profile"), 2000);
     } catch (error: any) {
       toast({
         title: "Submission failed",
@@ -233,11 +283,11 @@ export default function SubmitAction() {
                   )}
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? (
+                <Button type="submit" disabled={isSubmitting || isAnalyzing} className="w-full">
+                  {isSubmitting || isAnalyzing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
+                      {isAnalyzing ? "Analyzing with AI..." : "Submitting..."}
                     </>
                   ) : (
                     <>
@@ -246,6 +296,38 @@ export default function SubmitAction() {
                     </>
                   )}
                 </Button>
+
+                {analysisResult && (
+                  <Card className="mt-4 border-green-500">
+                    <CardHeader>
+                      <CardTitle className="text-lg">AI Analysis Complete!</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Quality Score:</span>
+                        <span className="font-semibold">{(analysisResult.quality_score * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Sentiment Score:</span>
+                        <span className="font-semibold">{(analysisResult.sentiment_score * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Relevance Score:</span>
+                        <span className="font-semibold">{(analysisResult.relevance_score * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Tokens Earned:</span>
+                        <span className="font-semibold text-green-600">+{analysisResult.tokens_earned}</span>
+                      </div>
+                      {analysisResult.feedback && (
+                        <div className="pt-2 border-t">
+                          <p className="text-sm font-medium mb-1">AI Feedback:</p>
+                          <p className="text-sm text-muted-foreground">{analysisResult.feedback}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </form>
             </Form>
           </CardContent>

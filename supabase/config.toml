@@ -1,1 +1,7 @@
 project_id = "wkhaqtmdksdftuzlhrwm"
+
+[functions.analyze-action]
+verify_jwt = false
+
+[functions.update-trust-score]
+verify_jwt = false
