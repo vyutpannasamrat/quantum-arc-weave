@@ -4,8 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Clock, XCircle, ThumbsUp, ThumbsDown, Shield } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+
+interface Verification {
+  id: string;
+  verified_by: string;
+  verification_type: string;
+  comment: string | null;
+  created_at: string;
+}
 
 interface Action {
   id: string;
@@ -19,11 +36,16 @@ interface Action {
   tokens_earned: number | null;
   status: string;
   created_at: string;
+  user_id: string;
+  verifications?: Verification[];
+  user_verification?: Verification | null;
 }
 
 export default function ActionsDashboard() {
   const [actions, setActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verifyingAction, setVerifyingAction] = useState<string | null>(null);
+  const [verificationComment, setVerificationComment] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -39,14 +61,34 @@ export default function ActionsDashboard() {
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch all actions (not just user's own)
+      const { data: actionsData, error: actionsError } = await supabase
         .from('actions')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setActions(data || []);
+      if (actionsError) throw actionsError;
+
+      // Fetch verifications for all actions
+      const { data: verificationsData } = await supabase
+        .from('action_verifications')
+        .select('*');
+
+      // Group verifications by action_id
+      const verificationsByAction = (verificationsData || []).reduce((acc, v) => {
+        if (!acc[v.action_id]) acc[v.action_id] = [];
+        acc[v.action_id].push(v);
+        return acc;
+      }, {} as Record<string, Verification[]>);
+
+      // Merge actions with verifications
+      const actionsWithVerifications = (actionsData || []).map(action => ({
+        ...action,
+        verifications: verificationsByAction[action.id] || [],
+        user_verification: (verificationsByAction[action.id] || []).find(v => v.verified_by === user.id) || null
+      }));
+
+      setActions(actionsWithVerifications);
     } catch (error: any) {
       toast({
         title: "Error loading actions",
@@ -55,6 +97,62 @@ export default function ActionsDashboard() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerify = async (actionId: string, verificationType: 'verified' | 'disputed') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const action = actions.find(a => a.id === actionId);
+      if (!action) return;
+
+      if (action.user_id === user.id) {
+        toast({
+          title: "Cannot verify own action",
+          description: "You can only verify actions from other users",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (action.user_verification) {
+        // Update existing verification
+        await supabase
+          .from('action_verifications')
+          .update({
+            verification_type: verificationType,
+            comment: verificationComment || null
+          })
+          .eq('action_id', actionId)
+          .eq('verified_by', user.id);
+      } else {
+        // Create new verification
+        await supabase
+          .from('action_verifications')
+          .insert({
+            action_id: actionId,
+            verified_by: user.id,
+            verification_type: verificationType,
+            comment: verificationComment || null
+          });
+      }
+
+      toast({
+        title: verificationType === 'verified' ? "Action verified!" : "Action disputed",
+        description: "Your verification has been recorded",
+      });
+
+      setVerificationComment("");
+      setVerifyingAction(null);
+      fetchActions();
+    } catch (error: any) {
+      toast({
+        title: "Error submitting verification",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -189,6 +287,99 @@ export default function ActionsDashboard() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Community Verifications */}
+                  <div className="mt-6 pt-6 border-t">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Community Verification</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp className="h-3 w-3" />
+                          {action.verifications?.filter(v => v.verification_type === 'verified').length || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ThumbsDown className="h-3 w-3" />
+                          {action.verifications?.filter(v => v.verification_type === 'disputed').length || 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Dialog open={verifyingAction === action.id} onOpenChange={(open) => {
+                      if (!open) {
+                        setVerifyingAction(null);
+                        setVerificationComment("");
+                      }
+                    }}>
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={action.user_verification?.verification_type === 'verified' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setVerifyingAction(action.id)}
+                            className="flex-1"
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" />
+                            Verify
+                          </Button>
+                        </DialogTrigger>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={action.user_verification?.verification_type === 'disputed' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setVerifyingAction(action.id)}
+                            className="flex-1"
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-2" />
+                            Dispute
+                          </Button>
+                        </DialogTrigger>
+                      </div>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Verify Community Action</DialogTitle>
+                          <DialogDescription>
+                            Help validate this action and strengthen community trust
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <Textarea
+                            placeholder="Optional: Add a comment about your verification..."
+                            value={verificationComment}
+                            onChange={(e) => setVerificationComment(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleVerify(action.id, 'verified')}
+                              className="flex-1"
+                              variant="default"
+                            >
+                              <ThumbsUp className="h-4 w-4 mr-2" />
+                              Verify Action
+                            </Button>
+                            <Button
+                              onClick={() => handleVerify(action.id, 'disputed')}
+                              className="flex-1"
+                              variant="destructive"
+                            >
+                              <ThumbsDown className="h-4 w-4 mr-2" />
+                              Dispute Action
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    {action.user_verification && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        You {action.user_verification.verification_type === 'verified' ? 'verified' : 'disputed'} this action
+                        {action.user_verification.comment && `: "${action.user_verification.comment}"`}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

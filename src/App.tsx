@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import SubmitAction from "./pages/SubmitAction";
 import ActionsDashboard from "./pages/ActionsDashboard";
+import CommunityTopics from "./pages/CommunityTopics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/submit-action" element={<SubmitAction />} />
           <Route path="/actions" element={<ActionsDashboard />} />
+          <Route path="/community" element={<CommunityTopics />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

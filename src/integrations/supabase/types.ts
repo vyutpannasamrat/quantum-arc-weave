@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_verifications: {
+        Row: {
+          action_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          verification_type: string
+          verified_by: string
+        }
+        Insert: {
+          action_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          verification_type: string
+          verified_by: string
+        }
+        Update: {
+          action_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          verification_type?: string
+          verified_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_verifications_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       actions: {
         Row: {
           ai_feedback: string | null
@@ -68,6 +103,42 @@ export type Database = {
         }
         Relationships: []
       }
+      community_topics: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          vote_count_down: number
+          vote_count_up: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          vote_count_down?: number
+          vote_count_up?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vote_count_down?: number
+          vote_count_up?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -94,6 +165,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      topic_votes: {
+        Row: {
+          created_at: string
+          id: string
+          topic_id: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          topic_id: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          topic_id?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_votes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "community_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
