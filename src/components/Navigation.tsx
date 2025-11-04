@@ -24,13 +24,22 @@ const Navigation = () => {
       <div className="container mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold">
-            <span className="text-gradient-quantum">QuantumMesh</span>
+            <span className="text-gradient-quantum">ImpactView</span>
           </Link>
 
           <div className="flex items-center gap-4">
             {user ? (
               <>
                 <Button asChild variant="quantum">
+                  <Link to="/ar-view">
+                    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    AR View
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
                   <Link to="/submit-action">
                     <Plus className="h-4 w-4 mr-2" />
                     Submit Action

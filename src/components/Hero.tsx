@@ -64,11 +64,10 @@ const Hero = () => {
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="space-y-4 animate-float">
             <h1 className="text-6xl md:text-8xl font-bold tracking-tight">
-              <span className="text-gradient-quantum">QuantumMesh</span>
+              <span className="text-gradient-quantum">ImpactView</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              A decentralized trust network blending augmented reality, quantum-inspired cryptography, 
-              and collective intelligence for verified human collaboration
+              AI-powered community trust platform with augmented reality verification and transparent impact tracking
             </p>
           </div>
 
@@ -98,12 +97,12 @@ const Hero = () => {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto pt-16">
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-gradient-quantum">256-bit</div>
-              <div className="text-sm text-muted-foreground">Quantum Encryption</div>
+              <div className="text-4xl font-bold text-gradient-quantum">AI-Powered</div>
+              <div className="text-sm text-muted-foreground">Action Analysis</div>
             </div>
             <div className="space-y-2">
               <div className="text-4xl font-bold text-gradient-quantum">Real-time</div>
-              <div className="text-sm text-muted-foreground">AR Integration</div>
+              <div className="text-sm text-muted-foreground">AR Camera View</div>
             </div>
             <div className="space-y-2">
               <div className="text-4xl font-bold text-gradient-quantum">Verified</div>

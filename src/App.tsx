@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import SubmitAction from "./pages/SubmitAction";
 import ActionsDashboard from "./pages/ActionsDashboard";
 import CommunityTopics from "./pages/CommunityTopics";
+import ARView from "./pages/ARView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/submit-action" element={<SubmitAction />} />
           <Route path="/actions" element={<ActionsDashboard />} />
           <Route path="/community" element={<CommunityTopics />} />
+          <Route path="/ar-view" element={<ARView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
