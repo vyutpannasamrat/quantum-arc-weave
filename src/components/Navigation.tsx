@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, LogIn, Plus, BarChart3, Users } from "lucide-react";
+import { User, LogIn, Plus, BarChart3, Users, Trophy } from "lucide-react";
 
 const Navigation = () => {
   const [user, setUser] = useState<any>(null);
@@ -55,6 +55,12 @@ const Navigation = () => {
                   <Link to="/community">
                     <Users className="h-4 w-4 mr-2" />
                     Community
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/leaderboard">
+                    <Trophy className="h-4 w-4 mr-2" />
+                    Leaderboard
                   </Link>
                 </Button>
                 <Button asChild variant="outline">

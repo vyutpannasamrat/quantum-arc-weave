@@ -10,6 +10,7 @@ import SubmitAction from "./pages/SubmitAction";
 import ActionsDashboard from "./pages/ActionsDashboard";
 import CommunityTopics from "./pages/CommunityTopics";
 import ARView from "./pages/ARView";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/actions" element={<ActionsDashboard />} />
           <Route path="/community" element={<CommunityTopics />} />
           <Route path="/ar-view" element={<ARView />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
