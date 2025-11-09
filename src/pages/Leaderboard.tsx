@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -143,12 +144,12 @@ const Leaderboard = () => {
           </TableRow>
         ) : (
           leaders.map((leader, index) => (
-            <TableRow key={leader.id}>
+            <TableRow key={leader.id} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="font-medium">
                 {getRankIcon(index)}
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-3">
+                <Link to={`/user/${leader.id}`} className="flex items-center gap-3 hover:underline">
                   <Avatar>
                     <AvatarFallback>
                       {leader.full_name?.charAt(0).toUpperCase() || "?"}
@@ -157,7 +158,7 @@ const Leaderboard = () => {
                   <span className="font-medium">
                     {leader.full_name || "Anonymous"}
                   </span>
-                </div>
+                </Link>
               </TableCell>
               <TableCell className="text-right">
                 <Badge variant="outline">{leader.trust_score}</Badge>

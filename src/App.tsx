@@ -11,6 +11,7 @@ import ActionsDashboard from "./pages/ActionsDashboard";
 import CommunityTopics from "./pages/CommunityTopics";
 import ARView from "./pages/ARView";
 import Leaderboard from "./pages/Leaderboard";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/community" element={<CommunityTopics />} />
           <Route path="/ar-view" element={<ARView />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/user/:id" element={<UserProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
