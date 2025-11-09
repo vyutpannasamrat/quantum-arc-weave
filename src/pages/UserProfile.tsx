@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Trophy, Award, Star, TrendingUp, MapPin, Calendar, CheckCircle2, ArrowLeft } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import ActivityHeatmap from "@/components/ActivityHeatmap";
 import { format } from "date-fns";
 
 interface Profile {
@@ -230,6 +231,9 @@ const UserProfile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Activity Heatmap */}
+          <ActivityHeatmap actions={actions} />
 
           {/* Badges Section */}
           <Card className="border-primary/20">
