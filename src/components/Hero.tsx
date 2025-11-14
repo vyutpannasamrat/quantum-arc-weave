@@ -8,18 +8,55 @@ import heroImage from "@/assets/quantum-hero.jpg";
 const Hero = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-    });
+      
+      if (session?.user) {
+        // Check onboarding status
+        const { data: progress } = await supabase
+          .from("onboarding_progress")
+          .select("completed")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        setOnboardingCompleted(progress?.completed ?? null);
+      }
+    };
+    
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const { data: progress } = await supabase
+          .from("onboarding_progress")
+          .select("completed")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        setOnboardingCompleted(progress?.completed ?? null);
+      } else {
+        setOnboardingCompleted(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleCTAClick = () => {
+    if (!user) {
+      navigate("/auth");
+    } else if (onboardingCompleted === false || onboardingCompleted === null) {
+      navigate("/onboarding");
+    } else {
+      navigate("/profile");
+    }
+  };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -76,9 +113,9 @@ const Hero = () => {
               variant="quantum" 
               size="lg"
               className="text-lg px-8 py-6 h-auto"
-              onClick={() => navigate(user ? "/profile" : "/auth")}
+              onClick={handleCTAClick}
             >
-              {user ? "View Profile" : "Join the Network"}
+              {user ? (onboardingCompleted ? "View Profile" : "Continue Onboarding") : "Join the Network"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
