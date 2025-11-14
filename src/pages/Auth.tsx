@@ -39,14 +39,42 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        // Check if user has completed onboarding
+        const { data: progress } = await supabase
+          .from("onboarding_progress")
+          .select("completed")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (progress === null) {
+          // New user, redirect to onboarding
+          navigate("/onboarding");
+        } else if (progress?.completed === false) {
+          navigate("/onboarding");
+        } else if (progress?.completed === true) {
+          navigate("/profile");
+        }
       }
     };
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session && event === "SIGNED_IN") {
-        navigate("/");
+        // Check if user has completed onboarding
+        const { data: progress } = await supabase
+          .from("onboarding_progress")
+          .select("completed")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (progress === null) {
+          // New user, redirect to onboarding
+          navigate("/onboarding");
+        } else if (progress?.completed === false) {
+          navigate("/onboarding");
+        } else if (progress?.completed === true) {
+          navigate("/profile");
+        }
       }
     });
 
