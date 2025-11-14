@@ -1,8 +1,50 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Please enter a valid email address");
 
 const CTA = () => {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validation = emailSchema.safeParse(email);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("early_access_signups")
+        .insert([{ email: email.trim() }]);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("This email is already registered for early access");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Thanks! You're on the list for early access");
+        setEmail("");
+      }
+    } catch (error) {
+      console.error("Error signing up:", error);
+      toast.error("Something went wrong. Please try again");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section className="py-24 px-6 relative overflow-hidden">
       {/* Background glow */}
@@ -22,21 +64,27 @@ const CTA = () => {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <Input 
               type="email" 
               placeholder="Enter your email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
               className="h-12 bg-background/50 border-border/50 focus:border-primary"
+              required
             />
             <Button 
+              type="submit"
               variant="quantum" 
               size="lg"
+              disabled={isSubmitting}
               className="h-12 whitespace-nowrap"
             >
-              Get Access
+              {isSubmitting ? "Submitting..." : "Get Access"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-          </div>
+          </form>
 
           <p className="text-xs text-muted-foreground">
             Early access spots are limited. Join now to secure your place in the network.

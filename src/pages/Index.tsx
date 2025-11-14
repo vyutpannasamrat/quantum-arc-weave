@@ -1,7 +1,12 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import Features from "@/components/Features";
 import LiveFeatures from "@/components/LiveFeatures";
+import TrustLedger from "@/components/TrustLedger";
 import ARMapping from "@/components/ARMapping";
+import CollectiveSentiment from "@/components/CollectiveSentiment";
+import MicroActions from "@/components/MicroActions";
+import SmartContracts from "@/components/SmartContracts";
 import HowItWorks from "@/components/HowItWorks";
 import ComingSoon from "@/components/ComingSoon";
 import CTA from "@/components/CTA";
@@ -12,8 +17,13 @@ const Index = () => {
       <Navigation />
       <div className="pt-20">
         <Hero />
+        <Features />
         <LiveFeatures />
+        <TrustLedger />
         <ARMapping />
+        <CollectiveSentiment />
+        <MicroActions />
+        <SmartContracts />
         <HowItWorks />
         <ComingSoon />
         <CTA />
